@@ -93,13 +93,42 @@ db.text8.aggregate(
 wynik - "the" - 1061396
 ```
 
-Dziesięć najczęściej występujących słów
+Dziesięć, sto i tysiąc najczęściej występujących słów
 
 ```sh
- db.text8.aggregate(
-     {$group:{ _id:"$word", count:{$sum:1}}}, 
-     {$sort: {count: -1}}, 
-     {$limit:10})
+db.text8.aggregate(
+      {$group:{ _id:"$word", number:{$sum : 1}}},
+      {$sort: {number: -1}},
+      {$limit:10},
+      {$group:{ _id:"dziesiec", count:{$sum: "$number" }}}
+  )
+
+wynik - 4205965
 ```
+
+```sh
+db.text8.aggregate(
+      {$group:{ _id:"$word", number:{$sum : 1}}},
+      {$sort: {number: -1}},
+      {$limit:100},
+      {$group:{ _id:"sto", count:{$sum: "$number" }}}
+  )
+
+wynik - 7998978
+```
+
+```sh
+db.text8.aggregate(
+      {$group:{ _id:"$word", number:{$sum : 1}}},
+      {$sort: {number: -1}},
+      {$limit:1000},
+      {$group:{ _id:"tysiac", count:{$sum: "$number" }}}
+  )
+
+wynik - 11433354
+```
+
+
+
 
 * zadanie 1e
