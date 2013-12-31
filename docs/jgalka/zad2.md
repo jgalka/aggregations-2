@@ -1,6 +1,6 @@
 ## Zadanie 2
 
-Do wykonania tego zadania posłużyłem się skryptem do generowania testowych baz danych [generatedata-3.1.0](https://codeload.github.com/benkeen/generatedata/zip/3.1.0). Więcej na temat tego programu lub użycia on-line [tutaj](http://www.generatedata.com)
+Do wykonania tego zadania posłużyłem się skryptem do generowania testowych baz danych [generatedata-3.1.0](https://codeload.github.com/benkeen/generatedata/zip/3.1.0). Więcej na temat tego programu lub użycia on-line [tutaj](http://www.generatedata.com).
 
 ## MongoDB
 
@@ -22,6 +22,7 @@ Przykładowy rekord z bazy danych
   "region" : "Zuid Holland"
 }
 ```
+#### Tak wyglądało w MMS importowanie bazy danych.
 
 ![import_bazy_MMS](../../images/jgalka/do_bazy.png)
 
@@ -82,18 +83,18 @@ wynik
 
 ![agregacja_02](../../images/jgalka/agregacja02.png)
 
-Stan MMS po wykonanych działaniach
+#### Stan MMS po wykonanych działaniach
 
 ![MMS_po_agregacjach](../../images/jgalka/po_agregacji.png)
 
 ## ElasticSearch
 
-Ponieważ nasza baza danych była w formacie csv przeprowadziłem konwersję do formatu json w celu zaimportowania jej do ElasticSearch
+Ponieważ nasza baza danych była w formacie csv przeprowadziłem konwersję do formatu json w celu zaimportowania jej do ElasticSearch.
 
 ```sh
 mongoexport -d noSql -c lista --out "/home/durand/zad_NoSql/lista.json"
 ```
-Następnym krokiem była konwersja uzyskanego pliku na tzw. "json przeplatany"
+Następnym krokiem była konwersja uzyskanego pliku na tzw. "json przeplatany".
 
 ```sh
 time cat lista.json |./jq --compact-output '{ "index": { "_type": "holandia" } }, .' > lista.bulk
@@ -101,13 +102,13 @@ time cat lista.json |./jq --compact-output '{ "index": { "_type": "holandia" } }
 
 ![screen_z_terminala](../../images/jgalka/Tworzenie_jsona_przeplatanego.png)
 
-Ponieważ import całego pliku się nie powiódł podzieliłem go na mniejsze części
+Ponieważ import całego pliku się nie powiódł podzieliłem go na mniejsze części.
 
 ```sh
 split -l 200000 lista.bulk
 ```
 
-A następnie już bez problemów dokonałem importu
+A następnie już bez problemów dokonałem importu.
 ```sh
 time for i in x*; do curl -s -XPOST   localhost:9200/data/_bulk --data-binary @$i; done
 ```
@@ -247,151 +248,8 @@ wynik
 
 ![elasticsearch_02](../../images/jgalka/ES_agr_02.png)
 
-Przykładowe screeny z pracy z ElasticSearch w przeglądarce przy użyciu wtyczki ElasticSearch-Head 
+Przykładowe screeny z pracy z ElasticSearch w przeglądarce przy użyciu wtyczki ElasticSearch-Head. 
 
 ![elasticsearch_02](../../images/jgalka/screen_ES2.png)
 ![elasticsearch_02](../../images/jgalka/screen_ES.png)
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-wstępne "oczyszczenie" pliku wykonałem korzystając ze skryptu [2unix.sh] (/scripts/wbzyl/2unix.sh)
-
-```sh
-$ time bash 2unix.sh Train.csv train.csv
-
-real 	45m041.787s
-user 	2m5.984s
-sys 	8m53.080s
-```
-import pliku do bazy
-```sh
-$ time mongoimport --type csv --collection train --file train.csv --headerline
-
-real 	195m027.482s
-user 	1m40.952s
-sys 	0m11.820s
-```
-zaimportowało 6034195 obiektów
-
-* zadanie 1b
-
-polecenie wprowadzone w konsoli mongoDB
-
-```sh
-db.train.count()
-```
-wynik - 6034195 obiektów
-
-* zadanie 1c
-
-do przerobienia pola "tags" ze stringu na tablicę użyłem skryptu
-
-```sh
-db.train.find( { "tags" : { $type : 2 } } ).snapshot().forEach(
- function (x) {
-  if (!Array.isArray(x.tags)){
-    x.tags = x.tags.split(' ');
-    db.train.save(x);
-}});
-```
-
-* zadanie 1d
-
-Plik do postaci text8 został przygotowany wg instrukcji zawartej [tutaj](http://wbzyl.inf.ug.edu.pl/nosql/zadania). Następnie został on sformatowany do postaci typu json za pomocą bashowego [skryptu](../../scripts/jgalka/stringToJson.sh) poleceniem
-
-```sh
-$ time bash stringToJ
-son.sh text8.txt text8.json
-```
-
-![text8_01](../../images/jgalka/text8_01.jpg)
-
-![text8_02](../../images/jgalka/text8_02.png)
-
-Jak widać system "ładnie" radził sobie z naprzemiennym obciążaniem każdego procesora osobno.
-
-Pozostało teraz zaimportować plik do kolekcji
-
-```sh
-$ time mongoimport --db text --collection text8 --type json --file text8.json
-```
-
-![text8_03](../../images/jgalka/text8_03.png)
-
-Zliczanie wszystkich znajdujących się w bazie słów
-
-```sh
-db.text8.(count)
-
-wynik - 17005208
-```
-
-Zliczanie wszystkich unikatowych słów
-
-```sh
-db.text8.distinct("word").length
-
-wynik - 253855
-```
-
-Jedno najczęściej występujące słowo
-
-```sh
-db.text8.aggregate(
-    {$group:{ _id:"$word", count:{$sum:1}}}, 
-    {$sort: {count: -1}}, 
-    {$limit:1})
-
-wynik - "the" - 1061396
-```
-
-Dziesięć, sto i tysiąc najczęściej występujących słów
-
-```sh
-db.text8.aggregate(
-      {$group:{ _id:"$word", number:{$sum : 1}}},
-      {$sort: {number: -1}},
-      {$limit:10},
-      {$group:{ _id:"dziesiec", count:{$sum: "$number" }}}
-  )
-
-wynik - 4205965
-```
-
-```sh
-db.text8.aggregate(
-      {$group:{ _id:"$word", number:{$sum : 1}}},
-      {$sort: {number: -1}},
-      {$limit:100},
-      {$group:{ _id:"sto", count:{$sum: "$number" }}}
-  )
-
-wynik - 7998978
-```
-
-```sh
-db.text8.aggregate(
-      {$group:{ _id:"$word", number:{$sum : 1}}},
-      {$sort: {number: -1}},
-      {$limit:1000},
-      {$group:{ _id:"tysiac", count:{$sum: "$number" }}}
-  )
-
-wynik - 11433354
-```
-
-
-
-
-* zadanie 1e
