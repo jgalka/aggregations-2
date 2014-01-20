@@ -132,3 +132,38 @@ wynik - 11433354
 
 
 * zadanie 1e
+
+Do wykonania tego zadania posłużyłem się danymi o położeniu szkół wyższych w Polsce. Zaczerpnąłem je ze strony [http://www.poipoint.pl](http://www.poipoint.pl).
+Baze na githubie umieściłem [tutaj](../../data/jgalka/szkoly_wyzsze.json).
+
+Import danych do mongo
+```sh
+mongoimport -d geo -c szkoly < szkoly_wyzsze.json
+```
+
+## Zapytania
+
+Szkoły wyższe w promieniu 15 kilometrów od Łodzi
+ ```js
+ db.schools.find( { loc : { $near :
+                         { $geometry :
+                             { type : "Point" ,
+                               coordinates: [ 19.466, 51.783 ] 
+}},
+                           $maxDistance : 150.00
+              } }, { _id: 0 } )
+ ```
+Wszystkie akademie w Polsce
+```js
+ db.schools.find( { "name" : "Akademia"} )
+ ```
+
+Wszystkie szkoły politechniczne w okolicach Warszawy
+```js
+ db.schools.find( {"name" : "Politechnika"},{ loc : { $near :
+                         { $geometry :
+                             { type : "Point" ,
+                               coordinates: [ 21.020, 52.259 ] } },
+                           $maxDistance : 10000
+              } }, { _id: 0 } )
+ ```
